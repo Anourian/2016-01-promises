@@ -5,6 +5,7 @@
 var fs = require('fs');
 var Promise = require('bluebird');
 var db = require('../../lib/db');
+var request = require('request');
 
 // Remember the pyramid of doom?
 
@@ -37,17 +38,17 @@ var addNewUserToDatabase = function(user, callback) {
 };
 
 // Always keep one rule of thumb in mind when chaining promises:
-// 
+//
 // Whatever is returned from the function in the `.then` block,
 // is passed to the next `.then` block in the chain
 //
-// Some notes:                           
+// Some notes:
 //   - If a syncronous value is returned, that value is immediately
 //     passed to the next `.then` block
 //
 //   - If a promise is returned, the value that fulfills the promise is eventually
 //     passed to the next `.then` block
-//  
+//
 //   - If a promise is returned and and error occurs inside the promise,
 //     the error falls past the chain, skipping all `.then` blocks,
 //     until it gets caught by a `.catch` block. If there is no `.catch` block,
@@ -79,14 +80,14 @@ var addNewUserToDatabaseAsync = function(user) {
 // Uncomment the lines below and run the example with `node exercises/bare_minimum/chaining.js`
 // It will succeed most of the time, but fail occasionally to demonstrate error handling
 
-// addNewUserToDatabaseAsync({ name: 'Dan', password: 'chickennuggets' })
-//   .then(function(savedUser) {
-//     console.log('All done!')
-//   })
-//   .catch(function(err) {
-//     // Will catch any promise rejections or thrown errors in the chain!
-//     console.log('Oops, caught an error: ', err.message)
-//   });
+addNewUserToDatabaseAsync({ name: 'Dan', password: 'chickennuggets' })
+  .then(function(savedUser) {
+    console.log('All done!')
+  })
+  .catch(function(err) {
+    // Will catch any promise rejections or thrown errors in the chain!
+    console.log('Oops, caught an error: ', err.message)
+  });
 
 /******************************************************************
  *                         Exercises                              *
@@ -102,12 +103,53 @@ var addNewUserToDatabaseAsync = function(user) {
 var pluckFirstLineFromFileAsync = require('./promiseConstructor').pluckFirstLineFromFileAsync;
 var getGitHubProfileAsync = require('./promisification').getGitHubProfileAsync
 
+// var getGitHubProfile = function (user, callback) {
+//  var options = {
+//    url: 'https://api.github.com/users/'+user,
+//    headers: { 'User-Agent': 'request' },
+//    json: true  // will JSON.parse(body) for us
+//  };
 
+//  request.get(options, function (err, res, body) {
+//    if (err) {
+//      callback(err, null);
+//    } else if (body.message) {
+//      callback(new Error('Failed to get GitHub profile: ' + body.message), null);
+//    } else {
+//      callback(null, body);
+//    }
+//  });
+// };
 
+// var fetchProfileAndWriteToFile = function(readFilePath, writeFilePath) {
+//   // TODO
+//    var options = {
+//      url: 'https://api.github.com/users/'+readFilePath,
+//      headers: { 'User-Agent': 'request' },
+//      json: true  // will JSON.parse(body) for us
+//    };
+
+//    return new Promise(function(resolve, reject){
+//      request.get(options, function(err, res, body) {
+//        if (err) {
+//         reject(err);
+//        } else {
+//         resolve(body);
+//        }
+//      });
+//     }).then(function(body){
+//     //fs.write()
+//    });
+// };
 var fetchProfileAndWriteToFile = function(readFilePath, writeFilePath) {
-  // TODO
+  return pluckFirstLineFromFileAsync(readFilePath)
+  .then(function(profile){
+    return getGitHubProfileAsync(profile)
+  })
+  .then(function(gprofile){
+    return fs.writeFile(writeFilePath, JSON.stringify(gprofile))
+  })
 };
-
 module.exports = {
   fetchProfileAndWriteToFile: fetchProfileAndWriteToFile
 }
